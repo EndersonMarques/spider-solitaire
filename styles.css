@@ -23,6 +23,7 @@ body {
   border-radius: 10px;
   overflow: hidden;
   display: flex;
+  flex-wrap: wrap;
   padding: 10px;
 }
 
@@ -49,8 +50,15 @@ body {
 .card.face-up {
   border: 2px solid #000;
 }
-
 .card.dragging {
   opacity: 0.5;
   z-index: 10; /* Coloca a carta sendo arrastada no topo */
+}
+
+/* Estilos adicionais para tornar o layout responsivo */
+@media (max-width: 600px) {
+  .card {
+      width: 45px;
+      height: 67px;
+  }
 }

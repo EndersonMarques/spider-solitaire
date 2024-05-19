@@ -176,6 +176,23 @@ class Game {
     }
   }
 
+  handleTouchStart(card, cardDiv, columnIndex, event) {
+    event.preventDefault();
+    this.handleDragStart(card, cardDiv, columnIndex);
+  }
+
+  handleTouchMove(cardDiv, event) {
+    event.preventDefault();
+    const touch = event.touches[0];
+    cardDiv.style.left = `${touch.pageX - cardDiv.offsetWidth / 2}px`;
+    cardDiv.style.top = `${touch.pageY - cardDiv.offsetHeight / 2}px`;
+  }
+
+  handleTouchEnd(cardDiv, event) {
+    event.preventDefault();
+    this.handleDragEnd(cardDiv);
+  }
+
   render() {
     const gameContainer = document.getElementById('game-container');
     gameContainer.innerHTML = '';
@@ -199,6 +216,18 @@ class Game {
           this.handleDragEnd(cardDiv);
         });
 
+        cardDiv.addEventListener('touchstart', (event) => {
+          this.handleTouchStart(card, cardDiv, columnIndex, event);
+        });
+
+        cardDiv.addEventListener('touchmove', (event) => {
+          this.handleTouchMove(cardDiv, event);
+        });
+
+        cardDiv.addEventListener('touchend', (event) => {
+          this.handleTouchEnd(cardDiv, event);
+        });
+
         columnDiv.appendChild(cardDiv);
       });
 
@@ -207,6 +236,10 @@ class Game {
       });
 
       columnDiv.addEventListener('drop', () => {
+        this.handleDrop(columnIndex);
+      });
+
+      columnDiv.addEventListener('touchend', (event) => {
         this.handleDrop(columnIndex);
       });
 
