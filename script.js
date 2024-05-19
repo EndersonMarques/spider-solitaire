@@ -63,8 +63,16 @@ class Column {
     this.cards.push(card);
   }
 
+  addCards(cards) {
+    this.cards = this.cards.concat(cards);
+  }
+
   removeCard() {
     return this.cards.pop();
+  }
+
+  removeCards(startIndex) {
+    return this.cards.splice(startIndex);
   }
 
   topCard() {
@@ -78,6 +86,13 @@ class Column {
     }
     return topCard.isSameSuit(card) && topCard.isNextInSequence(card);
   }
+
+  getSequenceStartingFrom(card) {
+    const cardIndex = this.cards.indexOf(card);
+    if (cardIndex === -1) return [];
+
+    return this.cards.slice(cardIndex);
+  }
 }
 
 class Game {
@@ -85,6 +100,7 @@ class Game {
     this.deck = new Deck();
     this.columns = [];
     this.draggedCard = null; // Carta sendo arrastada
+    this.draggedCards = []; // Sequência de cartas sendo arrastadas
     this.sourceColumn = null; // Coluna de origem da carta arrastada
     this.initColumns();
   }
@@ -112,12 +128,14 @@ class Game {
   handleDragStart(card, cardDiv, columnIndex) {
     this.draggedCard = card;
     this.sourceColumn = columnIndex;
+    this.draggedCards = this.columns[columnIndex].getSequenceStartingFrom(card);
     cardDiv.classList.add('dragging');
   }
 
   handleDragEnd(cardDiv) {
     cardDiv.classList.remove('dragging');
     this.draggedCard = null;
+    this.draggedCards = [];
     this.sourceColumn = null;
     this.render();
   }
@@ -129,13 +147,14 @@ class Game {
 
       // Validação de movimento
       if (targetColumn.canMoveCard(this.draggedCard)) {
-        targetColumn.addCard(this.draggedCard);
-        sourceColumn.removeCard(); // Remover a carta da coluna de origem
+        targetColumn.addCards(this.draggedCards);
+        sourceColumn.removeCards(sourceColumn.cards.indexOf(this.draggedCard));
         let topCard = sourceColumn.topCard();
         if (topCard) topCard.flip(); // Vira a última carta da coluna anterior
       }
 
       this.draggedCard = null;
+      this.draggedCards = [];
       this.sourceColumn = null;
       this.render();
     }
