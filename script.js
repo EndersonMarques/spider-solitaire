@@ -12,26 +12,34 @@ class Card {
 
   getImage() {
     if (this.faceUp) {
-        return `images/${this.value}_of_${this.suit}.png`;
+      return `images/${this.value}_of_${this.suit}.png`;
     } else {
-        return 'images/back.png';
+      return 'images/back.png';
     }
+  }
+
+  isSameSuit(card) {
+    return this.suit === card.suit;
+  }
+
+  isNextInSequence(card) {
+    return this.value === card.value + 1;
   }
 }
 
 class Deck {
   constructor() {
-    this.cards = []
-    this.init()
+    this.cards = [];
+    this.init();
   }
 
   init() {
-    const suits = ['hearts', 'diamonds', 'clubs', 'spades']
-    const values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+    const suits = ['hearts', 'diamonds', 'clubs', 'spades'];
+    const values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 
-    for (let suit of suits){
-      for (let value of values){
-        this.cards.push(new Card(suit, value))
+    for (let suit of suits) {
+      for (let value of values) {
+        this.cards.push(new Card(suit, value));
       }
     }
 
@@ -51,65 +59,86 @@ class Column {
     this.cards = [];
   }
 
-  addCard(card){
-    this.cards.push(card)
+  addCard(card) {
+    this.cards.push(card);
   }
 
   removeCard() {
-    return this.cards.pop()
+    return this.cards.pop();
   }
 
   topCard() {
     return this.cards[this.cards.length - 1];
   }
+
+  canMoveCard(card) {
+    const topCard = this.topCard();
+    if (!topCard) {
+      return true;
+    }
+    return topCard.isSameSuit(card) && topCard.isNextInSequence(card);
+  }
 }
 
 class Game {
   constructor() {
-      this.deck = new Deck();
-      this.columns = [];
-      this.draggedCard = null; // Carta sendo arrastada
-      this.initColumns();
+    this.deck = new Deck();
+    this.columns = [];
+    this.draggedCard = null; // Carta sendo arrastada
+    this.sourceColumn = null; // Coluna de origem da carta arrastada
+    this.initColumns();
   }
 
   initColumns() {
-      for (let i = 0; i < 10; i++) {
-          this.columns.push(new Column());
-      }
+    for (let i = 0; i < 10; i++) {
+      this.columns.push(new Column());
+    }
   }
 
   start() {
     for (let i = 0; i < 52; i++) {
-        let columnIndex = i % 10;
-        let card = this.deck.cards.pop();
-        this.columns[columnIndex].addCard(card);
+      let columnIndex = i % 10;
+      let card = this.deck.cards.pop();
+      this.columns[columnIndex].addCard(card);
     }
     // Virar a última carta de cada coluna
     this.columns.forEach(column => {
-        let topCard = column.topCard();
-        if (topCard) topCard.flip();
+      let topCard = column.topCard();
+      if (topCard) topCard.flip();
     });
     this.render();
   }
 
-  handleDragStart(card, cardDiv) {
+  handleDragStart(card, cardDiv, columnIndex) {
     this.draggedCard = card;
+    this.sourceColumn = columnIndex;
     cardDiv.classList.add('dragging');
-  }
-
-  handleDrop(columnIndex) {
-    if (this.draggedCard) {
-      const targetColumn = this.columns[columnIndex];
-      // Adicione lógica de validação de movimento aqui
-      targetColumn.addCard(this.draggedCard);
-      this.render();
-    }
   }
 
   handleDragEnd(cardDiv) {
     cardDiv.classList.remove('dragging');
     this.draggedCard = null;
+    this.sourceColumn = null;
     this.render();
+  }
+
+  handleDrop(columnIndex) {
+    if (this.draggedCard && this.sourceColumn !== null) {
+      const targetColumn = this.columns[columnIndex];
+      const sourceColumn = this.columns[this.sourceColumn];
+
+      // Validação de movimento
+      if (targetColumn.canMoveCard(this.draggedCard)) {
+        targetColumn.addCard(this.draggedCard);
+        sourceColumn.removeCard(); // Remover a carta da coluna de origem
+        let topCard = sourceColumn.topCard();
+        if (topCard) topCard.flip(); // Vira a última carta da coluna anterior
+      }
+
+      this.draggedCard = null;
+      this.sourceColumn = null;
+      this.render();
+    }
   }
 
   render() {
@@ -117,38 +146,42 @@ class Game {
     gameContainer.innerHTML = '';
 
     this.columns.forEach((column, columnIndex) => {
-        const columnDiv = document.createElement('div');
-        columnDiv.className = 'column';
-        column.cards.forEach((card, cardIndex) => {
-          const cardDiv = document.createElement('div');
-          cardDiv.className = 'card';
-          cardDiv.style.backgroundImage = `url(${card?.getImage()})`;
-          cardDiv.style.top = `${cardIndex * 20}px`; // Ajuste o valor conforme necessário para o empilhamento
-          
-          cardDiv.addEventListener('dragstart', (event) => {
-            this.handleDragStart(card, cardDiv);
-          });
-  
-          cardDiv.addEventListener('dragend', () => {
-            this.handleDragEnd(cardDiv);
-          });
-  
-          columnDiv.appendChild(cardDiv);
+      const columnDiv = document.createElement('div');
+      columnDiv.className = 'column';
+      column.cards.forEach((card, cardIndex) => {
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'card';
+        cardDiv.style.backgroundImage = `url(${card?.getImage()})`;
+        cardDiv.style.top = `${cardIndex * 20}px`;
+        cardDiv.draggable = true;
+        card.element = cardDiv;
+
+        cardDiv.addEventListener('dragstart', (event) => {
+          this.handleDragStart(card, cardDiv, columnIndex);
         });
-        columnDiv.addEventListener('dragover', (event) => {
-          event.preventDefault();
+
+        cardDiv.addEventListener('dragend', () => {
+          this.handleDragEnd(cardDiv);
         });
-  
-        columnDiv.addEventListener('drop', () => {
-          this.handleDrop(columnIndex);
-        });
-        gameContainer.appendChild(columnDiv);
+
+        columnDiv.appendChild(cardDiv);
+      });
+
+      columnDiv.addEventListener('dragover', (event) => {
+        event.preventDefault();
+      });
+
+      columnDiv.addEventListener('drop', () => {
+        this.handleDrop(columnIndex);
+      });
+
+      gameContainer.appendChild(columnDiv);
     });
   }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("Spider Solitaire Inicializado")
+  console.log("Spider Solitaire Inicializado");
   const game = new Game();
   game.start();
-})
+});

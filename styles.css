@@ -36,7 +36,9 @@ body {
   background-repeat: no-repeat;
   border-radius: 5px;
   position: absolute;
-  transition: top 0.3s;
+  cursor: pointer;
+  transition: top 0.5s;
+  z-index: 1; /* Garante que as cartas sejam empilhadas corretamente */
 }
 
 .card.face-up {
@@ -45,4 +47,5 @@ body {
 
 .card.dragging {
   opacity: 0.5;
+  z-index: 10; /* Coloca a carta sendo arrastada no topo */
 }
