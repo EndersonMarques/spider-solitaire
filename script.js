@@ -37,9 +37,11 @@ class Deck {
     const suits = ['hearts', 'diamonds', 'clubs', 'spades'];
     const values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 
-    for (let suit of suits) {
-      for (let value of values) {
-        this.cards.push(new Card(suit, value));
+    for (let i = 0; i < 2; i++) { // Criar dois baralhos
+      for (let suit of suits) {
+        for (let value of values) {
+          this.cards.push(new Card(suit, value));
+        }
       }
     }
 
@@ -99,6 +101,7 @@ class Game {
   constructor() {
     this.deck = new Deck();
     this.columns = [];
+    this.stock = []; // Estoque de cartas
     this.draggedCard = null; // Carta sendo arrastada
     this.draggedCards = []; // Sequência de cartas sendo arrastadas
     this.sourceColumn = null; // Coluna de origem da carta arrastada
@@ -112,7 +115,7 @@ class Game {
   }
 
   start() {
-    for (let i = 0; i < 52; i++) {
+    for (let i = 0; i < 54; i++) { // Distribuir cartas iniciais
       let columnIndex = i % 10;
       let card = this.deck.cards.pop();
       this.columns[columnIndex].addCard(card);
@@ -121,6 +124,19 @@ class Game {
     this.columns.forEach(column => {
       let topCard = column.topCard();
       if (topCard) topCard.flip();
+    });
+    // Adicionar o restante das cartas ao estoque
+    this.stock = this.deck.cards;
+    this.render();
+  }
+
+  dealFromStock() {
+    if (this.stock.length < 10) return; // Não há cartas suficientes no estoque
+
+    this.columns.forEach(column => {
+      let card = this.stock.pop();
+      column.addCard(card);
+      card.flip(); // Virar a nova carta distribuída
     });
     this.render();
   }
@@ -196,6 +212,10 @@ class Game {
 
       gameContainer.appendChild(columnDiv);
     });
+
+    // Renderizar o botão para distribuir cartas do estoque
+    const stockButton = document.getElementById('deal-from-stock');
+    stockButton.disabled = this.stock.length < 10;
   }
 }
 
@@ -203,4 +223,9 @@ document.addEventListener("DOMContentLoaded", () => {
   console.log("Spider Solitaire Inicializado");
   const game = new Game();
   game.start();
+
+  // Adicionar evento ao botão de distribuir cartas do estoque
+  document.getElementById('deal-from-stock').addEventListener('click', () => {
+    game.dealFromStock();
+  });
 });

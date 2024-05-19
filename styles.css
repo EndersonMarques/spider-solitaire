@@ -2,10 +2,15 @@ body {
   margin: 0;
   padding: 0;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   height: 100vh;
   background-color: #2e3d49;
+}
+
+#deal-from-stock {
+  margin-top: 20px;
 }
 
 #game-container {
